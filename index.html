@@ -1166,6 +1166,50 @@ function playSound(type) {
         });
         break;
       }
+      case 'canewhack': {
+        // Grandma's cane: sharp wooden THWACK + comedic bonk
+        // Thwack
+        const thwack = ctx.createOscillator();
+        const thwackGain = ctx.createGain();
+        thwack.type = 'square';
+        thwack.frequency.setValueAtTime(1200, ctx.currentTime);
+        thwack.frequency.linearRampToValueAtTime(80, ctx.currentTime + 0.08);
+        thwackGain.gain.setValueAtTime(0.25, ctx.currentTime);
+        thwackGain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.12);
+        thwack.connect(thwackGain).connect(ctx.destination);
+        thwack.start(ctx.currentTime);
+        thwack.stop(ctx.currentTime + 0.12);
+
+        // Impact crack noise
+        const crackSize = ctx.sampleRate * 0.1;
+        const crackBuf = ctx.createBuffer(1, crackSize, ctx.sampleRate);
+        const crackData = crackBuf.getChannelData(0);
+        for (let i = 0; i < crackSize; i++) crackData[i] = (Math.random() * 2 - 1);
+        const crack = ctx.createBufferSource();
+        crack.buffer = crackBuf;
+        const crackGain = ctx.createGain();
+        const crackFilter = ctx.createBiquadFilter();
+        crackFilter.type = 'highpass';
+        crackFilter.frequency.value = 2000;
+        crackGain.gain.setValueAtTime(0.2, ctx.currentTime);
+        crackGain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15);
+        crack.connect(crackFilter).connect(crackGain).connect(ctx.destination);
+        crack.start(ctx.currentTime);
+        crack.stop(ctx.currentTime + 0.15);
+
+        // Comedic "bonk" after the hit
+        const bonk = ctx.createOscillator();
+        const bonkGain = ctx.createGain();
+        bonk.type = 'sine';
+        bonk.frequency.setValueAtTime(600, ctx.currentTime + 0.1);
+        bonk.frequency.linearRampToValueAtTime(200, ctx.currentTime + 0.3);
+        bonkGain.gain.setValueAtTime(0.15, ctx.currentTime + 0.1);
+        bonkGain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.35);
+        bonk.connect(bonkGain).connect(ctx.destination);
+        bonk.start(ctx.currentTime + 0.1);
+        bonk.stop(ctx.currentTime + 0.35);
+        break;
+      }
       case 'foodthrow': {
         // Cafeteria food throw: metal tray clang + splatty impact
         // Tray clang
@@ -1236,6 +1280,7 @@ const CHARACTERS = [
   { id: 'jackie', name: 'Jackie', emoji: '🐉🏄', board: '🟩', unlockLevel: 3, quote: "Dragon surfer, RAWR! 🔥", style: 'dragon' },
   { id: 'shai', name: 'Shai', emoji: '🏄‍♂️', board: '🟧', unlockLevel: 4, quote: "Shai the wave rider!" },
   { id: 'twins', name: 'Benj & Sam', emoji: '🏄‍♂️🏄', board: '🟨', unlockLevel: 5, quote: "Twin power!" },
+  { id: 'grandma', name: 'Grandma', emoji: '👵🏄', board: '🩷', unlockLevel: 6, quote: "Back in MY day...! 🦯", style: 'grandma' },
   { id: 'lunchlady', name: 'The Hot Lunch Lady', emoji: '🦸‍♀️', board: '⭐', unlockLevel: 7, quote: "EAT YOUR LUNCH! 🍝", style: 'lunchlady' }
 ];
 
@@ -1287,6 +1332,13 @@ const LUNCHLADY_MESSAGES = [
   "Get your trays! 🍗", "Serving heat! 🔥"
 ];
 
+const GRANDMA_MESSAGES = [
+  "WHACK! 🦯", "Take THAT, sonny! 👵", "Not today! 🦯",
+  "Grandma says NO! 💥", "Back off! 👵", "Have some cane! 🦯",
+  "Old school! 💪", "Respect your elders! 👵",
+  "Get off my wave! 🦯", "Still got it! 💥"
+];
+
 const CONFETTI_ITEMS = ['🌊', '⭐', '🏄', '🐚', '🌴', '🎉', '🤙', '🔥', '🏆', '🦩'];
 
 const LEADERBOARD_DATA = [
@@ -1294,8 +1346,9 @@ const LEADERBOARD_DATA = [
   { name: 'Shai', emoji: '🏄‍♂️', score: 420, quote: "I surfed before it was cool" },
   { name: 'Quinn', emoji: '🏄‍♀️', score: 380, quote: "Wave queen forever!" },
   { name: 'Benj & Sam', emoji: '🏄‍♂️🏄', score: 350, quote: "Twin power activate!" },
-  { name: 'Jackie', emoji: '🏄', score: 310, quote: "Catch you on the flip side!" },
-  { name: 'Wilem', emoji: '🏄‍♂️', score: 250, quote: "Last one in is a kook!" }
+  { name: 'Jackie', emoji: '🐉🏄', score: 310, quote: "Catch you on the flip side!" },
+  { name: 'Grandma', emoji: '👵🏄', score: 280, quote: "Back in my day we surfed uphill!" },
+  { name: 'Wilem', emoji: '⚾🏄‍♂️', score: 250, quote: "Last one in is a kook!" }
 ];
 
 // ===== GAME STATE =====
@@ -1606,15 +1659,16 @@ function checkAnswer(choice, btn) {
     state.totalScore += points;
 
     surfer.className = 'surfer-container dodge';
-    playSound(state.selectedChar === 'lunchlady' ? 'foodthrow' : 'correct');
+    const soundType = state.selectedChar === 'lunchlady' ? 'foodthrow' : state.selectedChar === 'grandma' ? 'canewhack' : 'correct';
+    playSound(soundType);
     // Delay the obstacle blast slightly so the surfer turns first, then spray hits
     setTimeout(() => {
       showSprayBlast();
       obstacle.className = 'obstacle-container dodged';
     }, 300);
 
-    // Show splash message (Lunch Lady gets food-themed messages!)
-    const msgs = state.selectedChar === 'lunchlady' ? LUNCHLADY_MESSAGES : CORRECT_MESSAGES;
+    // Show splash message (special characters get themed messages!)
+    const msgs = state.selectedChar === 'lunchlady' ? LUNCHLADY_MESSAGES : state.selectedChar === 'grandma' ? GRANDMA_MESSAGES : CORRECT_MESSAGES;
     showSplash(msgs[Math.floor(Math.random() * msgs.length)] + ` +${points}`);
 
     updateHUD();
@@ -1663,8 +1717,76 @@ function showSprayBlast() {
   const originY = rect.top + rect.height / 2;
 
   const isLunchLady = state.selectedChar === 'lunchlady';
+  const isGrandma = state.selectedChar === 'grandma';
 
-  if (isLunchLady) {
+  if (isGrandma) {
+    // GRANDMA: Cane whack + denture throw attack!
+    // BIG cane swinging across
+    const cane = document.createElement('div');
+    cane.style.cssText = `position:absolute; font-size:120px; left:${originX - 30}px; top:${originY - 70}px; z-index:10; pointer-events:none;`;
+    cane.textContent = '🦯';
+    container.appendChild(cane);
+
+    cane.animate([
+      { transform: 'rotate(-60deg) translateX(0px)', opacity: 1 },
+      { transform: 'rotate(40deg) translateX(200px)', opacity: 1, offset: 0.4 },
+      { transform: 'rotate(50deg) translateX(220px)', opacity: 1, offset: 0.5 },
+      { transform: 'rotate(30deg) translateX(180px)', opacity: 0 }
+    ], { duration: 600, easing: 'ease-in-out', fill: 'forwards' });
+
+    // Flying dentures!
+    const dentureEmojis = ['🦷', '🦷', '🦷', '🦷', '🦷', '🦷'];
+    for (let i = 0; i < 6; i++) {
+      const denture = document.createElement('div');
+      denture.className = 'spray-droplet';
+      denture.textContent = dentureEmojis[i];
+      denture.style.fontSize = (30 + Math.random() * 18) + 'px';
+      const angle = -30 + Math.random() * 60;
+      const distance = 180 + Math.random() * 300;
+      const dx = Math.cos(angle * Math.PI / 180) * distance;
+      const dy = Math.sin(angle * Math.PI / 180) * distance;
+      const duration = 0.5 + Math.random() * 0.3;
+      const startY = originY + (Math.random() - 0.5) * 50;
+
+      denture.style.left = originX + 'px';
+      denture.style.top = startY + 'px';
+
+      denture.animate([
+        { transform: 'scale(0.3) rotate(0deg)', opacity: 1, left: originX + 'px', top: startY + 'px' },
+        { transform: 'scale(1.6) rotate(' + (180 + Math.random() * 540) + 'deg)', opacity: 0, left: (originX + dx) + 'px', top: (startY + dy) + 'px' }
+      ], { duration: duration * 1000, easing: 'ease-out', fill: 'forwards', delay: 100 + Math.random() * 150 });
+
+      container.appendChild(denture);
+    }
+
+    // Impact stars and sparks on hit
+    setTimeout(() => {
+      const impactX = originX + 200;
+      const impactY = originY;
+      const impacts = ['💥', '⭐', '💫', '✨', '💢', '🦷', '💥', '💫'];
+      for (let i = 0; i < 8; i++) {
+        const star = document.createElement('div');
+        star.className = 'spray-droplet';
+        star.textContent = impacts[i];
+        star.style.fontSize = (24 + Math.random() * 20) + 'px';
+        const angle = Math.random() * 360;
+        const distance = 60 + Math.random() * 150;
+        const dx = Math.cos(angle * Math.PI / 180) * distance;
+        const dy = Math.sin(angle * Math.PI / 180) * distance;
+
+        star.style.left = impactX + 'px';
+        star.style.top = impactY + 'px';
+
+        star.animate([
+          { transform: 'scale(0.3) rotate(0deg)', opacity: 1, left: impactX + 'px', top: impactY + 'px' },
+          { transform: 'scale(1.5) rotate(' + (Math.random() * 360) + 'deg)', opacity: 0, left: (impactX + dx) + 'px', top: (impactY + dy) + 'px' }
+        ], { duration: 500 + Math.random() * 300, easing: 'ease-out', fill: 'forwards' });
+
+        container.appendChild(star);
+      }
+    }, 250);
+
+  } else if (isLunchLady) {
     // HOT LUNCH LADY: Throw cafeteria food!
     for (let i = 0; i < 12; i++) {
       const food = document.createElement('div');
