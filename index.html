@@ -1300,12 +1300,12 @@ function playSound(type) {
 // ===== GAME DATA =====
 const CHARACTERS = [
   { id: 'webb', name: 'Webb', emoji: '😎⛓️🏄', board: '🟦', unlockLevel: 0, quote: "Too cool for school! 😎", style: 'cool' },
-  { id: 'wilem', name: 'Wilem', emoji: '⚾🏄‍♂️', board: '🟥', unlockLevel: 1, quote: "Catch me if you can! ⚾", style: 'baseball' },
-  { id: 'quinn', name: 'Quinn', emoji: '🏄‍♀️', board: '🟪', unlockLevel: 2, quote: "Wave queen! 👑" },
-  { id: 'jackie', name: 'Jackie', emoji: '🐉🏄', board: '🟩', unlockLevel: 3, quote: "Dragon surfer, RAWR! 🔥", style: 'dragon' },
-  { id: 'shai', name: 'Shai', emoji: '🏄‍♂️', board: '🟧', unlockLevel: 4, quote: "Shai the wave rider!" },
-  { id: 'twins', name: 'Benj & Sam', emoji: '🏄‍♂️🏄', board: '🟨', unlockLevel: 5, quote: "Twin power!" },
-  { id: 'grandma', name: 'Grandma', emoji: '👵🏄', board: '🩷', unlockLevel: 6, quote: "Back in MY day...! 🦯", style: 'grandma' },
+  { id: 'wilem', name: 'Wilem', emoji: '⚾🏄‍♂️', board: '🟥', unlockLevel: 0, quote: "Catch me if you can! ⚾", style: 'baseball' },
+  { id: 'quinn', name: 'Quinn', emoji: '🏄‍♀️', board: '🟪', unlockLevel: 0, quote: "Wave queen! 👑" },
+  { id: 'jackie', name: 'Jackie', emoji: '🐉🏄', board: '🟩', unlockLevel: 0, quote: "Dragon surfer, RAWR! 🔥", style: 'dragon' },
+  { id: 'shai', name: 'Shai', emoji: '🏄‍♂️', board: '🟧', unlockLevel: 0, quote: "Shai the wave rider!" },
+  { id: 'twins', name: 'Benj & Sam', emoji: '🏄‍♂️🏄', board: '🟨', unlockLevel: 0, quote: "Twin power!" },
+  { id: 'grandma', name: 'Grandma', emoji: '👵🏄', board: '🩷', unlockLevel: 0, quote: "Back in MY day...! 🦯", style: 'grandma' },
   { id: 'lunchlady', name: 'The Hot Lunch Lady', emoji: '🦸‍♀️', board: '⭐', unlockLevel: 7, quote: "EAT YOUR LUNCH! 🍝", style: 'lunchlady' }
 ];
 
@@ -1385,7 +1385,7 @@ let state = {
   streak: 0,
   lives: 3,
   correctCount: 0,
-  unlockedChars: ['webb'],
+  unlockedChars: ['webb', 'wilem', 'quinn', 'jackie', 'shai', 'twins', 'grandma'],
   completedLevels: [],
   highScore: 0,
   answering: false
@@ -1397,7 +1397,7 @@ function loadState() {
     const saved = localStorage.getItem('webbSurfMath');
     if (saved) {
       const s = JSON.parse(saved);
-      state.unlockedChars = s.unlockedChars || ['webb'];
+      state.unlockedChars = s.unlockedChars || ['webb', 'wilem', 'quinn', 'jackie', 'shai', 'twins', 'grandma'];
       state.completedLevels = s.completedLevels || [];
       state.selectedChar = s.selectedChar || 'webb';
       state.highScore = s.highScore || 0;
