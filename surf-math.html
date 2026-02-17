@@ -1397,7 +1397,11 @@ function loadState() {
     const saved = localStorage.getItem('webbSurfMath');
     if (saved) {
       const s = JSON.parse(saved);
-      state.unlockedChars = s.unlockedChars || ['webb', 'wilem', 'quinn', 'jackie', 'shai', 'twins', 'grandma'];
+      // Ensure all characters (except Hot Lunch Lady) are always unlocked
+      const defaultUnlocked = ['webb', 'wilem', 'quinn', 'jackie', 'shai', 'twins', 'grandma'];
+      const saved_chars = s.unlockedChars || [];
+      // Merge: keep any extras from save (like lunchlady) + ensure defaults are present
+      state.unlockedChars = [...new Set([...defaultUnlocked, ...saved_chars])];
       state.completedLevels = s.completedLevels || [];
       state.selectedChar = s.selectedChar || 'webb';
       state.highScore = s.highScore || 0;
